@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]+.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Set tag version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "TAG_VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Publish project
+        run: |
+          dotnet publish ClassicRecentlyAddedSeries/ClassicRecentlyAddedSeries.csproj -c Release -o ./publish -p:Version="${TAG_VERSION}"
+
+      - name: Package zip
+        run: |
+          cd publish
+          zip -r "../ClassicRecentlyAddedSeries_${TAG_VERSION}.zip" *
+          cd ..
+
+      - name: Generate manifest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CHECKSUM=$(md5sum "ClassicRecentlyAddedSeries_${TAG_VERSION}.zip" | awk '{print $1}')
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          NEW_ENTRY=$(jq -n \
+            --arg ver "$TAG_VERSION" \
+            --arg cs "$CHECKSUM" \
+            --arg ts "$TIMESTAMP" \
+            --arg repo "${{ github.repository }}" \
+            --arg tag "${{ github.ref_name }}" \
+            '{
+              version: $ver,
+              changelog: "See https://github.com/\($repo)/releases/tag/\($tag)",
+              targetAbi: "12.0.0.0",
+              sourceUrl: "https://github.com/\($repo)/releases/download/\($tag)/ClassicRecentlyAddedSeries_\($ver).zip",
+              checksum: $cs,
+              timestamp: $ts
+            }')
+
+          # Download manifest.json from previous release to accumulate all versions
+          BASE=manifest.json
+          rm -rf /tmp/prev-catalog && mkdir -p /tmp/prev-catalog
+          if gh release download --repo "${{ github.repository }}" --pattern manifest.json \
+               --dir /tmp/prev-catalog 2>/dev/null \
+             && jq -e '.[0].versions' /tmp/prev-catalog/manifest.json > /dev/null 2>&1; then
+            BASE=/tmp/prev-catalog/manifest.json
+          fi
+
+          if jq -e '.[0].versions' "$BASE" > /dev/null 2>&1; then
+            jq --argjson entry "$NEW_ENTRY" \
+              '.[0].versions = ([$entry] + [.[0].versions[] | select(.version != $entry.version)])' \
+              "$BASE" > manifest.json.tmp && mv manifest.json.tmp manifest.json
+          else
+            jq -n --argjson entry "$NEW_ENTRY" '[{
+              guid: "f9f0402b-a010-4ecb-99f6-6c84a56a64e2",
+              name: "Classic Recently Added Series",
+              description: "Restores classic recently added series behavior.",
+              overview: "Restores classic recently added series behavior.",
+              owner: "skremiec",
+              category: "MoviesAndShows",
+              versions: [$entry]
+            }]' > manifest.json
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            ClassicRecentlyAddedSeries_${{ env.TAG_VERSION }}.zip
+            manifest.json
+          generate_release_notes: true

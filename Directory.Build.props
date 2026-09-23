@@ -1,7 +1,16 @@
 <Project>
     <PropertyGroup>
-        <Version>1.0.0.0</Version>
-        <AssemblyVersion>1.0.0.0</AssemblyVersion>
-        <FileVersion>1.0.0.0</FileVersion>
+        <Version Condition="'$(Version)' == ''">0.0.0.0</Version>
     </PropertyGroup>
+
+    <Target Name="ResolveVersionFromGit" BeforeTargets="BeforeBuild;BeforeCompile;GetAssemblyVersion;GenerateAssemblyInfo" Condition="'$(Version)' == '0.0.0.0'">
+        <Exec Command="git tag --points-at HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" StandardErrorImportance="low" IgnoreExitCode="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="_GitTag" />
+        </Exec>
+        <PropertyGroup Condition="'$(_GitTag)' != ''">
+            <Version>$(_GitTag.TrimStart('v'))</Version>
+            <AssemblyVersion>$(_GitTag.TrimStart('v'))</AssemblyVersion>
+            <FileVersion>$(_GitTag.TrimStart('v'))</FileVersion>
+        </PropertyGroup>
+    </Target>
 </Project>
