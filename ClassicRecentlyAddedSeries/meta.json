@@ -1,0 +1,16 @@
+{
+  "category": "MoviesAndShows",
+  "guid": "f9f0402b-a010-4ecb-99f6-6c84a56a64e2",
+  "name": "Classic Recently Added Series",
+  "description": "Restores classic recently added series behavior.",
+  "owner": "skremiec",
+  "overview": "Restores classic recently added series behavior.",
+  "version": "{version}",
+  "targetAbi": "12.0.0.0",
+  "timestamp": "{timestamp}",
+  "status": "Active",
+  "autoUpdate": true,
+  "assemblies": [
+    "ClassicRecentlyAddedSeries.dll"
+  ]
+}

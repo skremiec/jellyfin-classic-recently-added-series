@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Jellyfin.Controller" Version="12.1.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <Target Name="CreateMetaJson" AfterTargets="Publish">
+    <PropertyGroup>
+      <MetaTemplatePath Condition="'$(MetaTemplatePath)' == ''">$(MSBuildThisFileDirectory)meta.json</MetaTemplatePath>
+      <MetaContent>$([System.IO.File]::ReadAllText('$(MetaTemplatePath)'))</MetaContent>
+      <CurrentTimestamp>$([System.DateTime]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'"))</CurrentTimestamp>
+      <MetaContent>$(MetaContent.Replace('{version}', '$(Version)').Replace('{timestamp}', '$(CurrentTimestamp)'))</MetaContent>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(PublishDir)meta.json" Lines="$(MetaContent)" Overwrite="true" />
+  </Target>
+
+</Project>
