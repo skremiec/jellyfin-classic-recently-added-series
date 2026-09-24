@@ -1,3 +1,7 @@
+[![GitHub Release](https://img.shields.io/github/v/release/skremiec/jellyfin-classic-recently-added-series)](https://github.com/skremiec/jellyfin-classic-recently-added-series/releases)
+[![GitHub checks](https://img.shields.io/github/actions/workflow/status/skremiec/jellyfin-classic-recently-added-series/release.yml)](https://github.com/skremiec/jellyfin-classic-recently-added-series/actions/workflows/release.yml)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?logo=buy-me-a-coffee&logoColor=000)](https://www.buymeacoffee.com/skremiec)
+
 # Classic Recently Added Series for Jellyfin
 
 A Jellyfin plugin that restores the classic "Recently Added" behavior by displaying the parent **Series** instead of individual **Episodes** or **Seasons** in your home screen and library views.
@@ -70,12 +74,10 @@ git clone https://github.com/skremiec/jellyfin-classic-recently-added-series.git
 cd jellyfin-classic-recently-added-series
 
 # Build Debug
-make build
-# or: dotnet build
+dotnet build
 
 # Publish Release
-make publish
-# or: dotnet publish ClassicRecentlyAddedSeries/ClassicRecentlyAddedSeries.csproj -c Release -o ./publish
+dotnet publish ClassicRecentlyAddedSeries/ClassicRecentlyAddedSeries.csproj -c Release -o ./publish
 ```
 
 The compiled plugin and its generated `meta.json` will be located in the `./publish` directory.
