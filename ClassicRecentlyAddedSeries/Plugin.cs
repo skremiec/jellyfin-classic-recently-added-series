@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
@@ -5,7 +6,7 @@ using MediaBrowser.Model.Serialization;
 
 namespace ClassicRecentlyAddedSeries;
 
-public class Plugin : BasePlugin<BasePluginConfiguration>
+public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
 {
     public Plugin(IApplicationPaths applicationPaths, IXmlSerializer xmlSerializer)
         : base(applicationPaths, xmlSerializer)
@@ -18,4 +19,16 @@ public class Plugin : BasePlugin<BasePluginConfiguration>
     public override Guid Id => Guid.Parse("f9f0402b-a010-4ecb-99f6-6c84a56a64e2");
 
     public static Plugin? Instance { get; private set; }
+
+    public IEnumerable<PluginPageInfo> GetPages()
+    {
+        return
+        [
+            new PluginPageInfo
+            {
+                Name = Name,
+                EmbeddedResourcePath = string.Format(CultureInfo.InvariantCulture, "{0}.Configuration.configPage.html", GetType().Namespace)
+            }
+        ];
+    }
 }

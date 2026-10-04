@@ -1,20 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Library;
 using MediaBrowser.Model.Querying;
 
 namespace ClassicRecentlyAddedSeries;
 
-public class DecoratedUserViewManager : IUserViewManager
+public class DecoratedUserViewManager(IUserViewManager inner) : IUserViewManager
 {
-    private readonly IUserViewManager _inner;
-
-    public DecoratedUserViewManager(IUserViewManager inner) => _inner = inner;
+    private readonly IUserViewManager _inner = inner;
 
     public Folder[] GetUserViews(UserViewQuery query) => _inner.GetUserViews(query);
 
@@ -24,26 +20,38 @@ public class DecoratedUserViewManager : IUserViewManager
     public List<Tuple<BaseItem, List<BaseItem>>> GetLatestItems(LatestItemsQuery request, DtoOptions options)
     {
         var latestItems = _inner.GetLatestItems(request, options);
+        var keepSingleEpisode = Plugin.Instance?.Configuration.SingleUnseenEpisodeDisplay == SingleUnseenEpisodeDisplayMode.Episode;
+
+        Dictionary<Guid, bool> singleEpisodeCache = [];
 
         for (var i = 0; i < latestItems.Count; i++)
         {
             var tuple = latestItems[i];
+
             for (var j = 0; j < tuple.Item2.Count; j++)
             {
-                if (tuple.Item2[j] is MediaBrowser.Controller.Entities.TV.Episode ep && ep.Series is not null)
+                if (tuple.Item2[j] is Episode episode && episode.Series is not null)
                 {
-                    tuple.Item2[j] = ep.Series;
+                    if (keepSingleEpisode && HasSingleUnplayedEpisode(episode.Series, request, options, singleEpisodeCache))
+                    {
+                        continue;
+                    }
+
+                    tuple.Item2[j] = episode.Series;
                 }
-                else if (tuple.Item2[j] is MediaBrowser.Controller.Entities.TV.Season s && s.Series is not null)
+                else if (tuple.Item2[j] is Season season && season.Series is not null)
                 {
-                    tuple.Item2[j] = s.Series;
+                    tuple.Item2[j] = season.Series;
                 }
             }
 
             var parent = tuple.Item1 switch
             {
-                MediaBrowser.Controller.Entities.TV.Episode ep when ep.Series is not null => ep.Series,
-                MediaBrowser.Controller.Entities.TV.Season s when s.Series is not null => s.Series,
+                Episode episode when episode.Series is not null =>
+                    (keepSingleEpisode && HasSingleUnplayedEpisode(episode.Series, request, options, singleEpisodeCache))
+                        ? tuple.Item1
+                        : episode.Series,
+                Season season when season.Series is not null => season.Series,
                 _ => tuple.Item1
             };
 
@@ -54,5 +62,41 @@ public class DecoratedUserViewManager : IUserViewManager
         }
 
         return latestItems;
+    }
+
+    private static bool HasSingleUnplayedEpisode(
+        Series series,
+        LatestItemsQuery request,
+        DtoOptions options,
+        Dictionary<Guid, bool> cache)
+    {
+        if (cache.TryGetValue(series.Id, out var result))
+        {
+            return result;
+        }
+
+        if (request.User is null)
+        {
+            return false;
+        }
+
+        var unplayedCount = 0;
+        foreach (var episode in series.GetEpisodes(request.User, options, false))
+        {
+            if (episode.IsUnplayed(request.User, null))
+            {
+                unplayedCount++;
+                if (unplayedCount > 1)
+                {
+                    result = false;
+                    cache[series.Id] = result;
+                    return false;
+                }
+            }
+        }
+
+        result = unplayedCount == 1;
+        cache[series.Id] = result;
+        return result;
     }
 }

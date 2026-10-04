@@ -11,7 +11,20 @@ A Jellyfin plugin that restores the classic "Recently Added" behavior by display
 ## Features
 
 - **Classic Experience**: Shows TV Series entries in "Recently Added" rows instead of cluttered single episodes.
-- **Zero Configuration**: Works automatically out of the box after installation.
+- **Configurable**: Easily customize options to suit your preferences.
+
+---
+
+## Configuration
+
+Configure the plugin via **Dashboard** > **Plugins** > **Classic Recently Added Series**:
+
+- **Display single unseen episode as**:
+  - `Episode` *(default)*: Displays a single unseen episode as an episode (Jellyfin pre-12.x behavior).
+  - `Series`: Always displays the whole series.
+
+> [!NOTE]
+> Changes may not be visible right away due to client-side caching in the web UI.
 
 ---
 

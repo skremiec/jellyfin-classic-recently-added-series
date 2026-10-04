@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Classic Recently Added Series</title>
+</head>
+<body>
+    <div id="ClassicRecentlyAddedSeriesConfigPage" data-role="page" class="page type-interior pluginConfigurationPage configPage" data-require="emby-select,emby-button">
+        <div data-role="content">
+            <div class="content-primary">
+                <h1>Classic Recently Added Series</h1>
+                <form id="ClassicRecentlyAddedSeriesConfigForm">
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="SingleUnseenEpisodeDisplay">Display single unseen episode as</label>
+                        <select is="emby-select" id="SingleUnseenEpisodeDisplay" name="SingleUnseenEpisodeDisplay" class="emby-select-withcolor emby-select">
+                            <option value="Episode">Episode</option>
+                            <option value="Series">Series</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            var ClassicRecentlyAddedSeriesConfig = {
+                pluginUniqueId: 'f9f0402b-a010-4ecb-99f6-6c84a56a64e2'
+            };
+
+            document.querySelector('#ClassicRecentlyAddedSeriesConfigPage')
+                .addEventListener('pageshow', function() {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(ClassicRecentlyAddedSeriesConfig.pluginUniqueId).then(function (config) {
+                        document.querySelector('#SingleUnseenEpisodeDisplay').value = config.SingleUnseenEpisodeDisplay;
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+            document.querySelector('#ClassicRecentlyAddedSeriesConfigForm')
+                .addEventListener('submit', function(e) {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(ClassicRecentlyAddedSeriesConfig.pluginUniqueId).then(function (config) {
+                        config.SingleUnseenEpisodeDisplay = document.querySelector('#SingleUnseenEpisodeDisplay').value;
+                        ApiClient.updatePluginConfiguration(ClassicRecentlyAddedSeriesConfig.pluginUniqueId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+                    e.preventDefault();
+                    return false;
+                });
+        </script>
+    </div>
+</body>
+</html>
